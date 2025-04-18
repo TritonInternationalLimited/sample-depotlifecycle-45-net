@@ -54,23 +54,20 @@ class TestSSL
             case "get":
                 await GetCurrentGateStatus(unitNumber, token);
                 break;
-
             case "create":
                 if (args.Length < 3)
                 {
                     Console.WriteLine("Error: Please provide advice number and unit number for post.");
                     return;
                 }
-
                 string adviceNumber = args[2];
+
                 await PostGateStatus(token, adviceNumber, unitNumber);
                 break;
-
             default:
                 Console.WriteLine("Error: Invalid mode. Use 'get' or 'create'.");
                 break;
         }
-
         Console.WriteLine("Press any key to exit...");
         Console.ReadKey();
     }
@@ -95,12 +92,16 @@ class TestSSL
      */
     static async Task GetCurrentGateStatus(string unitNumber, string token)
     {
+        // build the url
         string url = $"{_url}/{unitNumber}";
 
         using (HttpClient client = new HttpClient())
         {
+            // set request method to get
             var request = new HttpRequestMessage(HttpMethod.Get, url);
+            // add authrization header
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            // add the correct content header
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
             HttpResponseMessage response = await client.SendAsync(request);
@@ -143,26 +144,38 @@ class TestSSL
 
         using (HttpClient client = new HttpClient())
         {
+            // set request type to post
             var request = new HttpRequestMessage(HttpMethod.Post, url);
+            // set authorization header
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            // set content type to json
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
+            // Define the request body
             var requestBody = new
             {
+                // redelivery number
                 adviceNumber = redeliveryNumber,
+                // depot information (can be retrived using get)
                 depot = new
                 {
                     companyId = "CNXIAFTRI",
                     name = "Xiamen Sanlly Container Services, Co., Ltd.",
                     code = "XIAF"
                 },
+                // unitNumber of the container
                 unitNumber = unit,
+                // status of A - undamanged, D - damaged, S - sold
                 status = "A",
+                // timestamp of activity
                 activityTime = DateTime.UtcNow.ToString("o"),
+                // type of activity IN - Gate In, OUT - Gate Out
                 type = "IN",
+                // replace with actual object array
                 photos = new string[0]
             };
 
+            // Serialize the request body to JSON
             string jsonBody = JsonConvert.SerializeObject(requestBody);
             request.Content = new StringContent(jsonBody, System.Text.Encoding.UTF8, "application/json");
 
@@ -182,6 +195,11 @@ class TestSSL
         }
     }
 
+    /**
+     * This method provides additional debugging for the certificate.
+     * Additional print statements can be added to further inspect any certificate information
+     * Uncomment the return true line to disable SSL validation.
+     */
     private static bool CertificateDebug(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
     {
         Console.WriteLine("SSL Certificate Validation:");
