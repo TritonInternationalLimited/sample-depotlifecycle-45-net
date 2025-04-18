@@ -3,7 +3,6 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using System.Security.Cryptography.X509Certificates;
-
 using Newtonsoft.Json;
 using System.Net.Security;
 using System.Net;
@@ -17,13 +16,12 @@ using System.Net;
  * Sample Get Input: get TCKU6034863
  * Sample Create Input: create TCKU6034863 AXIAF32029
  */
-class Program
+class TestSSL
 {
     private static string _url = "https://testapi.trtn.com/triton/api/v2/gate";
 
     static async Task Main(string[] args)
     {
-
         // Set custom global sertificate validaiton callback
         ServicePointManager.ServerCertificateValidationCallback = CertificateDebug;
 
@@ -37,39 +35,42 @@ class Program
         string mode = args[0];
         string unitNumber = args[1];
         string token = Environment.GetEnvironmentVariable("TRITON_API_TOKEN");
-        
+
         // validate the unit number exists
         if (string.IsNullOrEmpty(unitNumber))
         {
             Console.WriteLine("Error: Unit number cannot be null or empty.");
             return;
         }
-        
+
         if (string.IsNullOrEmpty(token))
         {
             Console.WriteLine("Error: TRITON_API_TOKEN environment variable is not set.");
             return;
         }
-        
-        switch (mode) 
+
+        switch (mode)
         {
             case "get":
-                await getCurrentGateStatus(unitNumber, token);
+                await GetCurrentGateStatus(unitNumber, token);
                 break;
+
             case "create":
                 if (args.Length < 3)
                 {
                     Console.WriteLine("Error: Please provide advice number and unit number for post.");
                     return;
                 }
+
                 string adviceNumber = args[2];
-                
-                await postGateStatus(token, adviceNumber, unitNumber);
+                await PostGateStatus(token, adviceNumber, unitNumber);
                 break;
+
             default:
                 Console.WriteLine("Error: Invalid mode. Use 'get' or 'create'.");
                 break;
         }
+
         Console.WriteLine("Press any key to exit...");
         Console.ReadKey();
     }
@@ -92,19 +93,14 @@ class Program
           "type" : "IN"
         }
      */
-
-    static async Task getCurrentGateStatus(string unitNumber, string token)
+    static async Task GetCurrentGateStatus(string unitNumber, string token)
     {
-        // build the url
         string url = $"{_url}/{unitNumber}";
 
         using (HttpClient client = new HttpClient())
         {
-            // set request method to get
             var request = new HttpRequestMessage(HttpMethod.Get, url);
-            // add authrization header
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            // add the correct content header
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
             HttpResponseMessage response = await client.SendAsync(request);
@@ -141,43 +137,32 @@ class Program
         "currentInspectionCriteria" : "IICL"
         }
      */
-    static async Task postGateStatus(string token, string redeliveryNumber, string unit)
+    static async Task PostGateStatus(string token, string redeliveryNumber, string unit)
     {
         string url = _url;
 
         using (HttpClient client = new HttpClient())
         {
-            // set request type to post
             var request = new HttpRequestMessage(HttpMethod.Post, url);
-            // set authorization header
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            // set content type to json
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-            // Define the request body
             var requestBody = new
             {
-                // redelivery number
                 adviceNumber = redeliveryNumber,
-                // depot information (can be retrived using get)
-                depot = new {
+                depot = new
+                {
                     companyId = "CNXIAFTRI",
                     name = "Xiamen Sanlly Container Services, Co., Ltd.",
                     code = "XIAF"
                 },
-                // unitNumber of the container
                 unitNumber = unit,
-                // status of A - undamanged, D - damaged, S - sold
                 status = "A",
-                // timestamp of activity
                 activityTime = DateTime.UtcNow.ToString("o"),
-                // type of activity IN - Gate In, OUT - Gate Out
                 type = "IN",
-                // replace with actual object array
                 photos = new string[0]
             };
 
-            // Serialize the request body to JSON
             string jsonBody = JsonConvert.SerializeObject(requestBody);
             request.Content = new StringContent(jsonBody, System.Text.Encoding.UTF8, "application/json");
 
@@ -197,15 +182,14 @@ class Program
         }
     }
 
-    private static bool CertificateDebug(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors) {
-
+    private static bool CertificateDebug(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+    {
         Console.WriteLine("SSL Certificate Validation:");
         Console.WriteLine($"Subject: {certificate.Subject}");
         Console.WriteLine($"Issuer: {certificate.Issuer}");
         Console.WriteLine($"Effective Date: {certificate.GetEffectiveDateString()}");
         Console.WriteLine($"Expiration Date: {certificate.GetExpirationDateString()}");
         Console.WriteLine($"Policy Errors: {sslPolicyErrors}");
-
 
         // uncomment this line to turn off SSL validation
         // return true;
