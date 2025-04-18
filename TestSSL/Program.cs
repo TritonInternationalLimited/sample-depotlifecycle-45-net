@@ -1,4 +1,12 @@
-﻿using System.Net.Http.Headers;
+﻿using System;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Threading.Tasks;
+using System.Security.Cryptography.X509Certificates;
+
+using Newtonsoft.Json;
+using System.Net.Security;
+using System.Net;
 
 /**
  * Takes in 2-3 arguments
@@ -15,6 +23,10 @@ class Program
 
     static async Task Main(string[] args)
     {
+
+        // Set custom global sertificate validaiton callback
+        ServicePointManager.ServerCertificateValidationCallback = CertificateDebug;
+
         // Validate the arguments are provided
         if (args.Length < 2)
         {
@@ -58,6 +70,8 @@ class Program
                 Console.WriteLine("Error: Invalid mode. Use 'get' or 'create'.");
                 break;
         }
+        Console.WriteLine("Press any key to exit...");
+        Console.ReadKey();
     }
 
     /**
@@ -78,6 +92,7 @@ class Program
           "type" : "IN"
         }
      */
+
     static async Task getCurrentGateStatus(string unitNumber, string token)
     {
         // build the url
@@ -159,11 +174,11 @@ class Program
                 // type of activity IN - Gate In, OUT - Gate Out
                 type = "IN",
                 // replace with actual object array
-                photos = Array.Empty<object>()
+                photos = new string[0]
             };
 
             // Serialize the request body to JSON
-            string jsonBody = System.Text.Json.JsonSerializer.Serialize(requestBody);
+            string jsonBody = JsonConvert.SerializeObject(requestBody);
             request.Content = new StringContent(jsonBody, System.Text.Encoding.UTF8, "application/json");
 
             HttpResponseMessage response = await client.SendAsync(request);
@@ -180,5 +195,20 @@ class Program
                 Console.WriteLine($"Error Content: {responseContent}");
             }
         }
+    }
+
+    private static bool CertificateDebug(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors) {
+
+        Console.WriteLine("SSL Certificate Validation:");
+        Console.WriteLine($"Subject: {certificate.Subject}");
+        Console.WriteLine($"Issuer: {certificate.Issuer}");
+        Console.WriteLine($"Effective Date: {certificate.GetEffectiveDateString()}");
+        Console.WriteLine($"Expiration Date: {certificate.GetExpirationDateString()}");
+        Console.WriteLine($"Policy Errors: {sslPolicyErrors}");
+
+
+        // uncomment this line to turn off SSL validation
+        // return true;
+        return sslPolicyErrors == SslPolicyErrors.None;
     }
 }
