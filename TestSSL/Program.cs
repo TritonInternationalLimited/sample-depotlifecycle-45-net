@@ -83,6 +83,21 @@ class TestSSL
 
     /**
      * Gets the gate status for the given unit
+     * Sample Response:
+     *
+        {
+          "adviceNumber" : "AXIAF32007",
+          "depot" : {
+            "companyId" : "CNXIAFTRI",
+            "name" : "Xiamen Sanlly Container Services, Co., Ltd.",
+            "code" : "XIAF"
+          },
+          "status" : "A",
+          "activityTime" : "2025-03-12T00:00:00-04:00",
+          "currentExchangeRate" : 1.0,
+          "currentInspectionCriteria" : "IICL",
+          "type" : "IN"
+        }
      */
     static async Task GetCurrentGateStatus(string unitNumber, string token)
     {
@@ -115,6 +130,22 @@ class TestSSL
 
     /**
      * Generates a gate entry for the given unit
+     * Sample response:
+        {
+          "adviceNumber" : "AXIAF32029",
+          "customerReference" : "CSCX57-400000",
+          "transactionReference" : "AXIAF32029",
+          "insuranceCoverage" : {
+            "amountCovered" : 99999.00,
+            "amountCurrency" : "USD",
+            "allOrNothing" : false,
+            "appliesToCTL" : false,
+            "exclusions" : [ "Standard Exclusions Apply" ]
+          },
+          "currentExchangeRate" : 1.0,
+          "comments" : [ "Please use each unit's Inspection Category to determine what type of primary estimate to send." ],
+          "currentInspectionCriteria" : "IICL"
+        }
      */
     static async Task PostGateStatus(string token, string redeliveryNumber, string unit)
     {
