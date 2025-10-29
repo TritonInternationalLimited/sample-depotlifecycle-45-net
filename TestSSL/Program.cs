@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
@@ -20,15 +20,24 @@ class TestSSL
 {
     private static string _url = "https://testapi.trtn.com/triton/api/v2/gate";
 
-    static async Task Main(string[] args)
+    static void Main(string[] args)
     {
-        // Set custom global sertificate validaiton callback
+        // Set the TLS version, (VS 2013 will default to TSL 1.0/1.1)
+        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+
+        // Run async main manually (since VS2013 / .NET 4.5 doesn't support async Main)
+        RunAsync(args).Wait();
+    }
+
+    static async Task RunAsync(string[] args)
+    {
+        // Set custom global certificate validation callback
         ServicePointManager.ServerCertificateValidationCallback = CertificateDebug;
 
         // Validate the arguments are provided
         if (args.Length < 2)
         {
-            Console.WriteLine("Error: Please provide arugements");
+            Console.WriteLine("Error: Please provide arguments");
             return;
         }
 
@@ -93,13 +102,13 @@ class TestSSL
     static async Task GetCurrentGateStatus(string unitNumber, string token)
     {
         // build the url
-        string url = $"{_url}/{unitNumber}";
+        string url = string.Format("{0}/{1}", _url, unitNumber);
 
         using (HttpClient client = new HttpClient())
         {
             // set request method to get
             var request = new HttpRequestMessage(HttpMethod.Get, url);
-            // add authrization header
+            // add authorization header
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
             // add the correct content header
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -113,8 +122,8 @@ class TestSSL
             }
             else
             {
-                Console.WriteLine($"Error: {response.StatusCode}");
-                Console.WriteLine($"Error Content: {responseContent}");
+                Console.WriteLine(string.Format("Error: {0}", response.StatusCode));
+                Console.WriteLine(string.Format("Error Content: {0}", responseContent));
             }
         }
     }
@@ -123,19 +132,19 @@ class TestSSL
      * Generates a gate entry for the given unit
      * Sample response:
         {
-        "adviceNumber" : "AXIAF32029",
-        "customerReference" : "CSCX57-400000",
-        "transactionReference" : "AXIAF32029",
-        "insuranceCoverage" : {
-        "amountCovered" : 99999.00,
-        "amountCurrency" : "USD",
-        "allOrNothing" : false,
-        "appliesToCTL" : false,
-        "exclusions" : [ "Standard Exclusions Apply" ]
-        },
-        "currentExchangeRate" : 1.0,
-        "comments" : [ "Please use each unit's Inspection Category to determine what type of primary estimate to send." ],
-        "currentInspectionCriteria" : "IICL"
+          "adviceNumber" : "AXIAF32029",
+          "customerReference" : "CSCX57-400000",
+          "transactionReference" : "AXIAF32029",
+          "insuranceCoverage" : {
+            "amountCovered" : 99999.00,
+            "amountCurrency" : "USD",
+            "allOrNothing" : false,
+            "appliesToCTL" : false,
+            "exclusions" : [ "Standard Exclusions Apply" ]
+          },
+          "currentExchangeRate" : 1.0,
+          "comments" : [ "Please use each unit's Inspection Category to determine what type of primary estimate to send." ],
+          "currentInspectionCriteria" : "IICL"
         }
      */
     static async Task PostGateStatus(string token, string redeliveryNumber, string unit)
@@ -156,7 +165,7 @@ class TestSSL
             {
                 // redelivery number
                 adviceNumber = redeliveryNumber,
-                // depot information (can be retrived using get)
+                // depot information (can be retrieved using get)
                 depot = new
                 {
                     companyId = "CNXIAFTRI",
@@ -165,7 +174,7 @@ class TestSSL
                 },
                 // unitNumber of the container
                 unitNumber = unit,
-                // status of A - undamanged, D - damaged, S - sold
+                // status of A - undamaged, D - damaged, S - sold
                 status = "A",
                 // timestamp of activity
                 activityTime = DateTime.UtcNow.ToString("o"),
@@ -189,25 +198,23 @@ class TestSSL
             }
             else
             {
-                Console.WriteLine($"Error: {response.StatusCode}");
-                Console.WriteLine($"Error Content: {responseContent}");
+                Console.WriteLine(string.Format("Error: {0}", response.StatusCode));
+                Console.WriteLine(string.Format("Error Content: {0}", responseContent));
             }
         }
     }
 
     /**
      * This method provides additional debugging for the certificate.
-     * Additional print statements can be added to further inspect any certificate information
-     * Uncomment the return true line to disable SSL validation.
      */
     private static bool CertificateDebug(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
     {
         Console.WriteLine("SSL Certificate Validation:");
-        Console.WriteLine($"Subject: {certificate.Subject}");
-        Console.WriteLine($"Issuer: {certificate.Issuer}");
-        Console.WriteLine($"Effective Date: {certificate.GetEffectiveDateString()}");
-        Console.WriteLine($"Expiration Date: {certificate.GetExpirationDateString()}");
-        Console.WriteLine($"Policy Errors: {sslPolicyErrors}");
+        Console.WriteLine("Subject: " + certificate.Subject);
+        Console.WriteLine("Issuer: " + certificate.Issuer);
+        Console.WriteLine("Effective Date: " + certificate.GetEffectiveDateString());
+        Console.WriteLine("Expiration Date: " + certificate.GetExpirationDateString());
+        Console.WriteLine("Policy Errors: " + sslPolicyErrors);
 
         // uncomment this line to turn off SSL validation
         // return true;
